@@ -5,8 +5,12 @@ from services.database import init_db
 
 app = Flask(__name__)
 
-# Allow Vite dev server (localhost:5173) to call the API
-CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173"])
+# Allow Vite dev server + Vercel production frontend
+CORS(app, origins=[
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://*.vercel.app",
+])
 
 # Register API blueprint only — frontend is now served by Vite
 app.register_blueprint(alert_bp)  # API routes at /api/*

@@ -1,9 +1,14 @@
 import sqlite3
+import os
 from datetime import datetime
 
-DB_PATH = "data/solar.db"
+# Resolve path relative to the backend directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_DIR = os.path.join(BASE_DIR, "data")
+DB_PATH = os.path.join(DB_DIR, "solar.db")
 
 def get_connection():
+    os.makedirs(DB_DIR, exist_ok=True)
     return sqlite3.connect(DB_PATH)
 
 # Create tables

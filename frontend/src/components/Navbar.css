@@ -1,0 +1,112 @@
+.navbar {
+  background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 100%);
+  padding: 0 2rem;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navbar-logo {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--orange-500) 0%, var(--orange-600) 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);
+  transition: var(--transition-base);
+}
+
+.navbar-logo:hover {
+  transform: rotate(15deg) scale(1.05);
+}
+
+.navbar-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.navbar-title span {
+  background: linear-gradient(135deg, var(--orange-400), var(--solar-yellow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.connection-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.connection-indicator.connected {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--green-400);
+}
+
+.connection-indicator.disconnected {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--red-400);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: 2px;
+}
+
+.connected .status-dot {
+  background: var(--green-400);
+  animation: pulse-dot 2s infinite;
+}
+
+.disconnected .status-dot {
+  background: var(--red-400);
+}
+
+.last-updated {
+  color: var(--gray-400);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+@media (max-width: 640px) {
+  .navbar {
+    padding: 0 1rem;
+    height: 56px;
+  }
+  .navbar-title {
+    font-size: 1.1rem;
+  }
+  .last-updated {
+    display: none;
+  }
+}

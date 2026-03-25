@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.MODE === 'production'
+  ? 'https://fault-detector-4mqx.onrender.com/api'
+  : '/api';
 
 export function useAlerts(pollInterval = 3000) {
   const [alerts, setAlerts] = useState([]);

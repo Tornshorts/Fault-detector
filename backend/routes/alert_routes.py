@@ -2,6 +2,7 @@ import re
 import json
 from flask import request, jsonify, Blueprint
 from services import database
+from services import ml_service
 
 # Blueprint for API routes (prefix: /api)
 alert_bp = Blueprint("alert", __name__, url_prefix="/api")
@@ -163,7 +164,16 @@ def receive_data():
     data.setdefault("panel_id", data.get("device", "PANEL-1"))
     data.setdefault("status", determine_status(data))
 
+    # ── ML anomaly detection ─────────────────────────────────
+    ml_result = ml_service.predict(data)
+    data["ml_prediction"] = ml_result
+
+    # If ML detects anomaly and rules say HEALTHY, flag it
+    if ml_result["is_anomaly"] and data["status"] == "HEALTHY":
+        data["status"] = "ML_ANOMALY"
+
     print("📡 PARSED DATA:", data)
+    print("🌲 ML PREDICTION:", ml_result)
 
     try:
         database.insert_alert(data)
@@ -190,3 +200,81 @@ def get_alerts():
             "timestamp": r[6]
         })
     return jsonify({"alerts": alerts}), 200
+
+
+# ── ML Endpoints ──────────────────────────────────────────────
+
+@alert_bp.route("/ml/predict", methods=["POST"])
+def ml_predict():
+    """
+    Predict anomaly for a single reading.
+    Body: {"voltage": 3.2, "current": 450, "load": 50, "temperature": 28}
+    """
+    data = request.get_json(force=True)
+    result = ml_service.predict(data)
+    return jsonify(result), 200
+
+
+@alert_bp.route("/ml/predict/batch", methods=["POST"])
+def ml_predict_batch():
+    """
+    Predict anomalies for multiple readings.
+    Body: {"readings": [{...}, {...}, ...]}
+    """
+    body = request.get_json(force=True)
+    readings = body.get("readings", [])
+    if not readings:
+        return jsonify({"error": "No readings provided"}), 400
+    results = ml_service.predict_batch(readings)
+    return jsonify({"predictions": results}), 200
+
+
+@alert_bp.route("/ml/status", methods=["GET"])
+def ml_status():
+    """Check if the Isolation Forest model is loaded and ready."""
+    return jsonify({
+        "model_loaded": ml_service.is_model_loaded(),
+        "model_path": ml_service.MODEL_PATH,
+        "features": ml_service.FEATURE_NAMES,
+    }), 200
+
+
+@alert_bp.route("/ml/train", methods=["POST"])
+def ml_train():
+    """
+    Trigger model re-training from the database.
+    Optional body: {"contamination": 0.1, "n_estimators": 200}
+    """
+    body = request.get_json(silent=True) or {}
+    contamination = body.get("contamination", 0.1)
+    n_estimators = body.get("n_estimators", 200)
+
+    # Load data from DB
+    import sqlite3
+    conn = database.get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT voltage, current, load_pct, temperature
+        FROM alerts
+        WHERE voltage IS NOT NULL
+          AND current IS NOT NULL
+          AND load_pct IS NOT NULL
+          AND temperature IS NOT NULL
+    """)
+    rows = cur.fetchall()
+    conn.close()
+
+    data = [{
+        "voltage": r[0], "current": r[1],
+        "load": r[2], "temperature": r[3]
+    } for r in rows]
+
+    try:
+        metrics = ml_service.train_model(
+            data,
+            contamination=contamination,
+            n_estimators=n_estimators,
+        )
+        return jsonify({"message": "Model trained successfully", "metrics": metrics}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
